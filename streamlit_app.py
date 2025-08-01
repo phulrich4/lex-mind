@@ -3,7 +3,7 @@ from tabs import search_tab, documents_tab
 
 st.title("LexMind - KI-Assistent für Juristen")
 st.write(
-    "Let's start building! Hier entsteht grossartiges."
+    "Durchsuchen Sie über 1.000 professionelle juristische Vorlagen mit semantischer Suche. Intelligent, schnell und präzise."
 )
 
 tab_suche, tab_dokumente = st.tabs(["Suche", "Dokumente"])
