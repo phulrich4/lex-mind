@@ -1,10 +1,10 @@
 import streamlit as st
 
-st.title("🔍 Juristische Vorlage finden")
+st.title("Finden Sie die perfekte juristische Vorlage")
 
-query = st.text_input("Was suchst du?", placeholder="z. B. Kapitalerhöhung, Abtretung, etc.")
+query = st.text_input("Durchsuchen Sie über 1.000 professionelle juristische Vorlagen mit semantischer Suche. Schnell, präzise und intelligent?", placeholder="Suchen Sie nach juristischen Begriffen oder Abschnitten...")
 
-st.markdown("## Ergebnisse")
+st.markdown("# Ergebnisse")
 st.markdown("---")
 for i in range(3):
     with st.container():
