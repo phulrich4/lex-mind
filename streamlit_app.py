@@ -1,5 +1,5 @@
 import streamlit as st
-from pages import suche, vorlagenueberischt
+from pages import suche_page, vorlagen_page
 
 st.set_page_config(page_title="LexMind", layout="wide")
 
