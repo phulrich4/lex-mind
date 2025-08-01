@@ -6,7 +6,7 @@ st.write(
     "Let's start building! Hier entsteht grossartiges."
 )
 
-tab_suche, tab_dokumente = st.tabs(["🔍 Suche", "📄 Dokumente"])
+tab_suche, tab_dokumente = st.tabs(["Suche", "Dokumente"])
 
 with tab_suche:
     suche.render()
