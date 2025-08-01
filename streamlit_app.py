@@ -8,7 +8,7 @@ if "page" not in st.session_state:
 
 # Sidebar mit fixen Buttons für Navigation
 with st.sidebar:
-    st.markdown("## Navigation")
+    st.markdown("## LexMind")
     if st.button("🔍 Suche"):
         st.session_state.page = "Suche"
     if st.button("📚 Vorlagenübersicht"):
