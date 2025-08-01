@@ -9,7 +9,7 @@ st.write(
 tab_suche, tab_dokumente = st.tabs(["Suche", "Dokumente"])
 
 with tab_suche:
-    suche.render()
+    search_tab.render()
 
 with tab_dokumente:
-    dokumente.render()
+    documents_tab.render()
