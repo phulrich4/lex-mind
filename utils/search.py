@@ -3,7 +3,7 @@
 from rank_bm25 import BM25Okapi
 from typing import List, Optional
 from langchain.docstore.document import Document
-from langchain.vectorstores.faiss import FAISS
+from langchain.vectorstores import FAISS
 from langchain.embeddings import SentenceTransformerEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
 from nltk.corpus import stopwords
