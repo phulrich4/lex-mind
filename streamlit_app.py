@@ -9,14 +9,16 @@ st.write(
 
 tab_suche, tab_dokumente = st.tabs(["Suche", "Dokumente"])
 
-with tab_suche:
-    search_tab.render()
-
-with tab_dokumente:
-    documents_tab.render()
-
 # Dokumente aus dem "docs" folder in die App laden
 docs = load_documents_from_folder("docs/")
 if not docs:
     st.error("Keine Dokumente im Ordner `docs/` gefunden.")
     st.stop()
+
+with tab_suche:
+    search_tab.render(docs)
+
+with tab_dokumente:
+    documents_tab.render(docs)
+
+
