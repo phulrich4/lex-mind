@@ -3,3 +3,4 @@ langchain
 faiss-cpu
 PyMuPDF
 python-docx
+reportlab
