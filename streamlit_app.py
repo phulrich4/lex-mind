@@ -16,7 +16,7 @@ if not docs:
     st.stop()
 
 with tab_suche:
-    search_tab.render(docs)
+    search_tab.render()
 
 with tab_dokumente:
     documents_tab.render(docs)
