@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 from tabs import search_tab, documents_tab
 from utils.document_loader import load_documents_from_folder
 
