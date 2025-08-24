@@ -1,6 +1,6 @@
 streamlit
-langchain
 faiss-cpu
+langchain
 rank-bm25
 nltk
 pandas
