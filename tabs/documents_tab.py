@@ -2,7 +2,7 @@ import streamlit as st
 import os
 
 def render(docs):
-    st.subheader("Dokumentenübersicht")
+    st.subheader("Dokumentenübersicht - {len(unique_docs)} verfügbar")
 
     # Einzigartige Dokumente filtern
     seen = set()
@@ -12,9 +12,7 @@ def render(docs):
         if source not in seen:
             seen.add(source)
             unique_docs.append(doc)
-
-    st.subheader("Dokumentenübersicht - {len(unique_docs)} verfügbar")
-
+            
     st.markdown(f"### 📄 {len(unique_docs)} Dokument(e) geladen:")
 
     for doc in unique_docs:
