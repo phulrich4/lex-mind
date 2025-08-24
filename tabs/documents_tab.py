@@ -12,7 +12,7 @@ def render(docs):
             unique_docs.append(doc)
 
     # Titel mit Anzahl
-    st.subheader(f"Dokumentenübersicht – {len(unique_docs)} aktive")
+    st.subheader(f"Dokumentenübersicht – Total {len(unique_docs)} Vorlagen")
 
     # Dokumentliste
     for doc in unique_docs:
