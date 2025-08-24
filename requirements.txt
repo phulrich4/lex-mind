@@ -5,3 +5,7 @@ PyMuPDF
 python-docx
 reportlab
 rank-bm25
+
+# andere Pakete…
+git+https://github.com/hwchase17/langchain-community.git
+
