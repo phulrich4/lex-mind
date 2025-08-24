@@ -9,4 +9,5 @@ scikit-learn
 PyMuPDF
 python-docx
 reportlab
+sentence-transformers
 
