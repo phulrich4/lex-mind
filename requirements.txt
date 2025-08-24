@@ -1,8 +1,12 @@
 streamlit
 langchain
 faiss-cpu
+rank-bm25
+nltk
+pandas
+numpy
+scikit-learn
 PyMuPDF
 python-docx
 reportlab
-rank-bm25
 
