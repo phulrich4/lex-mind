@@ -7,19 +7,26 @@ from utils.document_loader import load_documents_from_folder
 # Fix: Wide Mode dauerhaft aktivieren
 st.set_page_config(page_title="LexMind", layout="wide")
 
-# Index + Docs nur einmal laden
-DOCS_PATH = "data/"
+# Pfad zu Dokumenten
+DOCS_PATH = "docs/"
 
+# Indexierung + Docs nur einmal pro Session laden
 @st.cache_resource
 def init_vectorstore():
-    """Lädt Dokumente und erstellt/holt den Vectorstore (nur 1x pro Session)."""
+    """Lädt Dokumente und erstellt den Vectorstore nur 1x pro Session."""
+    if not os.path.exists(DOCS_PATH):
+        st.warning(f"Dokumentenordner '{DOCS_PATH}' nicht gefunden.")
+        return [], None
     docs = load_documents_from_folder(DOCS_PATH)
     vectorstore = load_or_create_vectorstore(docs)
     return docs, vectorstore
 
 if "docs" not in st.session_state or "vectorstore" not in st.session_state:
     st.session_state.docs, st.session_state.vectorstore = init_vectorstore()
-    st.session_state.retriever = HybridRetriever(st.session_state.vectorstore)
+    if st.session_state.vectorstore is not None:
+        st.session_state.retriever = HybridRetriever(st.session_state.vectorstore)
+    else:
+        st.session_state.retriever = None
 
 st.title("LexMind - KI-Assistent für Juristen")
 st.write(
