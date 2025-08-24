@@ -1,5 +1,6 @@
 import streamlit as st
 from tabs import search_tab, documents_tab
+from utils.document_loader import load_documents_from_folder
 
 st.title("LexMind - KI-Assistent für Juristen")
 st.write(
