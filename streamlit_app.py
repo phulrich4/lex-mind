@@ -2,6 +2,7 @@ import streamlit as st
 import os
 from tabs import search_tab, documents_tab
 from utils.document_loader import load_documents_from_folder
+from utils.search import load_or_create_vectorstore, HybridRetriever
 
 # Page Config
 # Fix: Wide Mode dauerhaft aktivieren
