@@ -10,6 +10,7 @@ from nltk.corpus import stopwords
 import pandas as pd
 import numpy as np
 import re
+import nltk
 
 
 def load_or_create_vectorstore(documents, index_path="data", model_name="all-MiniLM-L6-v2"):
@@ -26,6 +27,13 @@ def load_or_create_vectorstore(documents, index_path="data", model_name="all-Min
     db.save_local(index_path)
     return db
 
+
+# Nur einmal ausführen, lädt die stopwords
+try:
+    nltk.data.find("corpora/stopwords")
+except LookupError:
+    nltk.download("stopwords")
+    
 # ⛔ Stoppwörter (Deutsch + manuell erweitert)
 STOPWORDS = set(stopwords.words("german")) | {"eine", "und", "für", "der", "die", "das", "mit", "von", "zur", "zum"}
 
