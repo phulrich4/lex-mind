@@ -1,7 +1,6 @@
 # utils/document_loader.py
 import os
 import fitz  # PyMuPDF
-import docx
 import re
 from langchain.docstore.document import Document
 from utils.category_manager import assign_category
