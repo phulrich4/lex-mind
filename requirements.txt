@@ -9,5 +9,4 @@ scikit-learn
 PyMuPDF
 python-docx
 reportlab
-langchain-community
 
