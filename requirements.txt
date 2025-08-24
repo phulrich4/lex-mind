@@ -1,13 +1,13 @@
-streamlit
-faiss-cpu
-langchain
-rank-bm25
-nltk
+streamlit==1.30.0
+faiss-cpu==1.7.4
+langchain==0.1.146
+sentence-transformers==2.2.2
+rank-bm25==0.2.1
 pandas
 numpy
 scikit-learn
 PyMuPDF
 python-docx
 reportlab
-sentence-transformers
+
 
