@@ -13,3 +13,9 @@ with tab_suche:
 
 with tab_dokumente:
     documents_tab.render()
+
+# Dokumente aus dem "docs" folder in die App laden
+docs = load_documents_from_folder("docs/")
+if not docs:
+    st.error("Keine Dokumente im Ordner `docs/` gefunden.")
+    st.stop()
