@@ -2,8 +2,6 @@ import streamlit as st
 import os
 
 def render(docs):
-    st.subheader(f"Dokumentenübersicht – {len(unique_docs)} verfügbar")
-
     # Einzigartige Dokumente filtern
     seen = set()
     unique_docs = []
@@ -13,6 +11,10 @@ def render(docs):
             seen.add(source)
             unique_docs.append(doc)
 
+    # Titel mit Anzahl
+    st.subheader(f"Dokumentenübersicht – {len(unique_docs)} aktive")
+
+    # Dokumentliste
     for doc in unique_docs:
         name = os.path.basename(doc.metadata.get("source", "Unbekannt"))
         category = doc.metadata.get("category", "–")
@@ -21,4 +23,5 @@ def render(docs):
             st.write(f"📄 **{name}**")
         with col2:
             st.write(f"📁 *Kategorie:* `{category}`")
+
 
