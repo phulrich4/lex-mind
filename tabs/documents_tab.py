@@ -2,7 +2,7 @@ import streamlit as st
 import os
 
 def render(docs):
-    st.subheader("Dokumentenübersicht Test - {len(unique_docs)} verfügbar")
+    st.subheader(f"Dokumentenübersicht – {len(unique_docs)} verfügbar")
 
     # Einzigartige Dokumente filtern
     seen = set()
@@ -12,8 +12,6 @@ def render(docs):
         if source not in seen:
             seen.add(source)
             unique_docs.append(doc)
-            
-    st.markdown(f"### 📄 {len(unique_docs)} Dokument(e) geladen:")
 
     for doc in unique_docs:
         name = os.path.basename(doc.metadata.get("source", "Unbekannt"))
