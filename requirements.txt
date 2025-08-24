@@ -4,3 +4,4 @@ faiss-cpu
 PyMuPDF
 python-docx
 reportlab
+rank-bm25
