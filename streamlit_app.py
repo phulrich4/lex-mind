@@ -3,9 +3,9 @@ import os
 from tabs import search_tab, documents_tab
 from utils.document_loader import load_documents_from_folder
 from utils.search import load_or_create_vectorstore, HybridRetriever
+from langchain.embeddings import SentenceTransformerEmbeddings
 
 # Page Config
-# Fix: Wide Mode dauerhaft aktivieren
 st.set_page_config(page_title="LexMind", layout="wide")
 
 # Pfad zu Dokumenten
@@ -22,10 +22,21 @@ def init_vectorstore():
     vectorstore = load_or_create_vectorstore(docs)
     return docs, vectorstore
 
+# Initialisieren der Docs und Vectorstore in Session State
 if "docs" not in st.session_state or "vectorstore" not in st.session_state:
     st.session_state.docs, st.session_state.vectorstore = init_vectorstore()
     if st.session_state.vectorstore is not None:
-        st.session_state.retriever = HybridRetriever(st.session_state.vectorstore)
+        # Embedding-Modell erstellen
+        embedding_model = SentenceTransformerEmbeddings(
+            model_name="all-MiniLM-L6-v2",
+            model_kwargs={"device": "cpu"}
+        )
+        # HybridRetriever korrekt initialisieren
+        st.session_state.retriever = HybridRetriever(
+            faiss_index=st.session_state.vectorstore,
+            texts=st.session_state.docs,
+            embedding_model=embedding_model
+        )
     else:
         st.session_state.retriever = None
 
@@ -47,5 +58,3 @@ with tab_suche:
 
 with tab_dokumente:
     documents_tab.render(docs)
-
-
