@@ -41,9 +41,7 @@ if "docs" not in st.session_state or "vectorstore" not in st.session_state:
 # App UI
 # ---------------------------------------
 st.title("LexMind - KI-Assistent für Juristen")
-st.write(
-    "Durchsuchen Sie juristische Vorlagen mit KI. Intelligent, schnell und präzise."
-)
+st.write("Durchsuchen Sie juristische Vorlagen mit KI. Intelligent, schnell und präzise.")
 
 tab_suche, tab_dokumente = st.tabs(["Suche", "Dokumente"])
 
