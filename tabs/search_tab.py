@@ -29,7 +29,9 @@ def render(docs, retriever):
         else:
             st.write(f"{len(results[:3])} relevante Treffer gefunden:")
             for i, doc in enumerate(results[:3]):
-                render_result_card(doc, i, query, retriever.embedding_model)
+                # Nur Snippet mit Highlighting anzeigen
+                st.markdown(f"**{i+1}. {doc.metadata.get('source','Dokument')}**")
+                st.markdown(doc.page_content, unsafe_allow_html=True)
 
             if show_debug:
                 st.markdown("### 📊 Scoring-Tabelle")
