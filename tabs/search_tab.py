@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.result_card import render_result_card
+import os
 
 def render(docs, retriever):
     if not docs or not retriever:
@@ -29,9 +29,20 @@ def render(docs, retriever):
         else:
             st.write(f"{len(results[:3])} relevante Treffer gefunden:")
             for i, doc in enumerate(results[:3]):
-                # Nur Snippet mit Highlighting anzeigen
+                # Snippet mit Highlighting
                 st.markdown(f"**{i+1}. {doc.metadata.get('source','Dokument')}**")
                 st.markdown(doc.page_content, unsafe_allow_html=True)
+
+                # Download-Button für das Original-Dokument
+                source_file = os.path.join("docs", doc.metadata.get("source"))
+                if os.path.exists(source_file):
+                    with open(source_file, "rb") as f:
+                        st.download_button(
+                            label="📄 Dokument herunterladen",
+                            data=f,
+                            file_name=doc.metadata.get("source"),
+                            mime="application/octet-stream"
+                        )
 
             if show_debug:
                 st.markdown("### 📊 Scoring-Tabelle")
