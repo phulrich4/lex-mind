@@ -1,14 +1,13 @@
+# utils/search.py
 from typing import List, Optional
 import re
 import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from rank_bm25 import BM25Okapi
-from langchain.docstore.document import Document
+from sentence_transformers import SentenceTransformer
 
-# -------------------------------
 # Feste deutsche Stoppwörter
-# -------------------------------
 STOPWORDS = {
     "eine","und","für","der","die","das","mit","von","zur","zum",
     "im","des","den","dem","ist","sind","auf","an","in","als","bei","auch",
@@ -16,10 +15,31 @@ STOPWORDS = {
 }
 
 # -------------------------------
-# Hybrid Retriever: VectorStore + BM25
+# InMemory Vectorstore
+# -------------------------------
+class InMemoryVectorStore:
+    def __init__(self, documents: List[dict], embeddings: np.ndarray):
+        self.documents = documents
+        self.embeddings = embeddings
+
+    @classmethod
+    def from_documents(cls, docs, embedding_model):
+        texts = [doc.page_content for doc in docs]
+        embeddings = embedding_model.encode(texts, convert_to_numpy=True)
+        return cls(docs, embeddings)
+
+    def similarity_search_with_score(self, query: str, k: int = 5):
+        query_emb = self.embedding_model.encode([query], convert_to_numpy=True)
+        sims = cosine_similarity(query_emb, self.embeddings)[0]
+        docs_scores = list(zip(self.documents, sims))
+        docs_scores.sort(key=lambda x: x[1], reverse=True)
+        return docs_scores[:k]
+
+# -------------------------------
+# Hybrid Retriever
 # -------------------------------
 class HybridRetriever:
-    def __init__(self, vectorstore, texts: List[Document], embedding_model):
+    def __init__(self, vectorstore: InMemoryVectorStore, texts: List, embedding_model: SentenceTransformer):
         self.vectorstore = vectorstore
         self.texts = texts
         self.embedding_model = embedding_model
@@ -38,9 +58,9 @@ class HybridRetriever:
 
     def highlight_keywords(self, text: str, query: str, threshold: float = 0.75):
         words = list(set(re.findall(r'\w{4,}', text)))
-        query_embedding = self.embedding_model.embed_query(query)
-        word_embeddings = [self.embedding_model.embed_query(w) for w in words]
-        similarities = cosine_similarity([query_embedding], word_embeddings)[0]
+        query_emb = self.embedding_model.encode([query], convert_to_numpy=True)
+        word_embs = self.embedding_model.encode(words, convert_to_numpy=True)
+        similarities = cosine_similarity(query_emb, word_embs)[0]
 
         synonym_map = {
             "Zession": ["Abtretung", "Zessionserklärung"],
@@ -61,22 +81,19 @@ class HybridRetriever:
                 highlighted = re.sub(rf"\b({re.escape(word)})\b", r"<mark>\1</mark>", highlighted, flags=re.IGNORECASE)
         return highlighted
 
-    def search(self, query: str, k: int = 3, alpha: float = 0.5, documents: Optional[List[Document]] = None, return_debug: bool = False):
+    def search(self, query: str, k: int = 3, alpha: float = 0.5, documents: Optional[List] = None, return_debug: bool = False):
         docs_to_search = documents if documents is not None else self.texts
         if not docs_to_search:
             return [] if not return_debug else ([], pd.DataFrame())
 
-        # Embedding Scores via InMemoryVectorStore
         embedding_results = self.vectorstore.similarity_search_with_score(query, k=len(docs_to_search))
         embedding_scores = {doc.page_content: score for doc, score in embedding_results}
 
-        # BM25 Scores
         tokenized_corpus = [self.preprocess(doc.page_content) for doc in docs_to_search]
         bm25 = BM25Okapi(tokenized_corpus)
         bm25_scores = bm25.get_scores(self.preprocess(query))
         bm25_score_dict = {doc.page_content: bm25_scores[i] for i, doc in enumerate(docs_to_search)}
 
-        # Hybrid Score & Snippet
         results, debug_data = [], []
         for doc in docs_to_search:
             e_score = embedding_scores.get(doc.page_content, 0.0)
@@ -86,7 +103,7 @@ class HybridRetriever:
                 continue
             snippet = self.extract_snippet(doc.page_content, query)
             highlighted_snippet = self.highlight_keywords(snippet, query)
-            results.append((Document(page_content=highlighted_snippet, metadata=doc.metadata), hybrid_score))
+            results.append((doc, hybrid_score))
             debug_data.append({
                 "Snippet": snippet[:100],
                 "BM25": round(b_score, 4),
