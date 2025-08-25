@@ -2,7 +2,7 @@
 streamlit
 
 # LangChain Ökosystem
-langchain
+langchain>=0.1.0
 sentence-transformers
 
 # Vector Search
