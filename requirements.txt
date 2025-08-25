@@ -1,5 +1,5 @@
 streamlit
-langchain[all]
+langchain
 sentence-transformers
 rank-bm25
 pandas
