@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from rank_bm25 import BM25Okapi
 from langchain.docstore.document import Document
-from langchain_community.vectorstores import InMemoryVectorStore
+from langchain_core.vectorstores.in_memory import InMemoryVectorStore
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 
 # ⛔ Feste deutsche Stoppwörter (kein NLTK Download nötig)
