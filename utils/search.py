@@ -7,8 +7,8 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from rank_bm25 import BM25Okapi
 from langchain.docstore.document import Document
-from langchain.vectorstores import FAISS
-from langchain.embeddings import SentenceTransformerEmbeddings
+from langchain_community.vectorstores import InMemoryVectorStore
+from langchain_community.embeddings import SentenceTransformerEmbeddings
 
 # ⛔ Feste deutsche Stoppwörter (kein NLTK Download nötig)
 STOPWORDS = {
@@ -18,27 +18,20 @@ STOPWORDS = {
 }
 
 # -------------------------------
-# Vectorstore / FAISS Laden oder Erstellen
+# Vectorstore erstellen
 # -------------------------------
-def load_or_create_vectorstore(documents: List[Document], index_path="data", model_name="all-MiniLM-L6-v2"):
+def load_or_create_vectorstore(documents: List[Document], model_name="all-MiniLM-L6-v2"):
     embeddings = SentenceTransformerEmbeddings(model_name=model_name, model_kwargs={"device": "cpu"})
-
-    try:
-        db = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
-        return db
-    except Exception:
-        pass
-
-    db = FAISS.from_documents(documents, embeddings)
-    db.save_local(index_path)
+    db = InMemoryVectorStore.from_documents(documents, embeddings)
     return db
+
 
 # -------------------------------
 # Hybrid Retriever: FAISS + BM25
 # -------------------------------
 class HybridRetriever:
-    def __init__(self, faiss_index: FAISS, texts: List[Document], embedding_model: SentenceTransformerEmbeddings):
-        self.faiss_index = faiss_index
+    def __init__(self, vectorstore: InMemoryVectorStore, texts: List[Document], embedding_model: SentenceTransformerEmbeddings):
+        self.vectorstore = vectorstore
         self.texts = texts
         self.embedding_model = embedding_model
 
@@ -90,7 +83,7 @@ class HybridRetriever:
             return [] if not return_debug else ([], pd.DataFrame())
 
         # Embedding Scores via FAISS
-        embedding_results = self.faiss_index.similarity_search_with_score(query, k=len(docs_to_search))
+        embedding_results = self.vectorstore.similarity_search_with_relevance_scores(query, k=len(docs_to_search))
         embedding_scores = {doc.page_content: score for doc, score in embedding_results}
 
         # BM25 Scores
