@@ -33,41 +33,9 @@ def highlight_semantic_terms(text, query, embedding_model, threshold=0.7):
     return text
 
 
-def render_result_card(doc, index, query, embeddings):
+def render_result_card(doc, idx, query):
     """
-    Zeigt ein Suchergebnis mit Metadaten, Textauszug und Vorschau-Button an.
+    Zeigt den Textabschnitt als Karte an und erlaubt Download.
     """
-    st.markdown(f"### Treffer {index + 1}")
-
-    content = doc.page_content
-    source = doc.metadata.get("source", "unbekannt")
-    page = doc.metadata.get("page", "-")
-    heading = doc.metadata.get("heading", "-")
-    category = doc.metadata.get("category", "Andere")
-
-    st.markdown(f"**📂 Kategorie:** `{category}`")
-    st.markdown(f"**📄 Dokument:** `{source}`")
-    st.markdown(f"**📌 Abschnitt:** *{heading}*  &nbsp;&nbsp;|&nbsp;&nbsp;  **🗂️ Seite:** {page}", unsafe_allow_html=True)
-    st.markdown("---")
-    st.markdown(content, unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if st.button(f"🔍 Vorschau anzeigen (Treffer {index + 1})"):
-            preview_path = os.path.join("previews", source.replace(".docx", ".pdf"))
-            if os.path.exists(preview_path):
-                st.markdown(f"[📄 PDF-Vorschau öffnen]({preview_path})", unsafe_allow_html=True)
-            else:
-                st.warning("Keine Vorschau verfügbar.")
-
-    with col2:
-        if st.button(f"Hervorheben im Original (Treffer {index + 1})"):
-            from utils.highlighter import DocumentHighlighter
-            doc_path = os.path.join("docs", source)
-            if os.path.exists(doc_path):
-                highlighter = DocumentHighlighter(doc_path)
-                output_path = highlighter.highlight(content)
-                st.success(f"Gespeichert unter: {output_path}")
-            else:
-                st.warning(f"Dokument nicht gefunden: {source}")
+    st.markdown(f"### Treffer {idx+1}: {doc.metadata.get('heading', '')}")
+    st.write(doc.page_content[:500] + ("…" if len(doc.page_content) > 500 else ""))  # Snippet
