@@ -1,31 +1,46 @@
 # tabs/search_tab.py
 import streamlit as st
+from utils.result_card import render_result_card
 from utils.search import HybridRetriever
 
 def render(docs, retriever):
-    """
-    Cloud-Version der Suche:
-    - Zeigt Treffer mit Snippet & Highlight
-    - Zeigt Dateiname + Kategorie über dem Snippet
-    - Ermöglicht Download des Originaldokuments
-    """
-    if not docs or retriever is None:
-        st.warning("⚠️ Keine Dokumente oder Retriever verfügbar.")
+    if not docs or not retriever:
+        st.warning("Keine Dokumente oder Retriever verfügbar.")
         return
 
+    # Suchmodus fix auf Hybrid
+    alpha = 0.5
+
+    # Texteingabe für die Suchanfrage
     query = st.text_area(
-        "Was für ein Dokument suchen Sie?",
+        "Was für eine Vorlage suchen Sie?",
         key="query",
         height=100
     )
 
-    if st.button("🔍 Suche") and query.strip():
-        results = retriever.search(query, k=10, alpha=0.5)
+    search = st.button("🔍 Suche")
 
+    if search and query.strip():
+        results = retriever.search(query, k=10, alpha=alpha)
         if not results:
             st.warning("⚠️ Keine relevanten Dokumente gefunden.")
-            return
+        else:
+            st.write(f"{len(results)} relevante Treffer gefunden:")
+            for i, doc in enumerate(results):
+                # Dateiname und Kategorie anzeigen
+                filename = doc.metadata.get("source", "–")
+                category = doc.metadata.get("category", "–")
+                st.markdown(f"**{filename}**  |  Kategorie: *{category}*")
 
-        st.write(f"{len(results[:3])} relevante Treffer gefunden:")
+                # Snippet mit Highlight
+                render_result_card(doc, i, query)
 
-        for i, doc in enumerate(results[:3]):
+                # Download Button
+                file_path = f"docs/{filename}"
+                if st.button(f"📄 Download {filename}", key=f"download_{i}"):
+                    with open(file_path, "rb") as f:
+                        st.download_button(
+                            label="Download",
+                            data=f,
+                            file_name=filename
+                        )
