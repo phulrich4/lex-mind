@@ -1,15 +1,12 @@
 # Core
-streamlit>=1.36.0
+streamlit
 
-# LangChain Ökosystem (ab v0.2.x gibt es langchain_community)
-langchain>=0.2.11
-langchain-community>=0.2.11
-langchain-core>=0.2.11
-sentence-transformers>=2.2.2
+# LangChain Ökosystem
+langchain
+sentence-transformers
 
 # Vector Search
 rank-bm25
-faiss-cpu
 
 # Data
 pandas
