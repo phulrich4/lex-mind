@@ -12,11 +12,6 @@ def render(docs, retriever):
     spacer, button_col = st.columns([6, 1.5])
     with button_col:
         search = st.button("🔍 Suche", use_container_width=True)
-        reset = st.button("🔁 Zurücksetzen", use_container_width=True)
-
-    if reset:
-        st.session_state.query = ""
-        st.experimental_rerun()
 
     if search and query.strip():
         if show_debug:
