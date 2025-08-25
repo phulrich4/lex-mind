@@ -4,23 +4,22 @@ from utils.search import HybridRetriever
 from utils.result_card import render_result_card
 
 def render(docs, retriever):
-    # 🔹 Kategorie-Filter fix auf "Alle"
-    selected_category = "Alle"
+    """
+    Render-Funktion für die Suche in der Cloud-Version.
+    """
+    if not docs or retriever is None:
+        st.warning("⚠️ Keine Dokumente oder Retriever verfügbar.")
+        return
 
-    # ✏️ Texteingabe für die Suchanfrage
+    # 🔘 Texteingabe für Suchanfrage
     query = st.text_area(
         "Was für ein Dokument suchen Sie?",
         key="query",
         height=100
     )
 
-    # 🔘 Such-Button rechts
-    spacer, button_col = st.columns([6, 1.5])
-    with button_col:
-        search = st.button("🔍 Suche", use_container_width=True)
-
-    if search and query.strip():
-        # Suche ausführen (HybridRetriever)
+    # 🔎 Suche-Button
+    if st.button("🔍 Suche") and query.strip():
         results = retriever.search(query, k=10, alpha=0.5)
 
         if not results:
@@ -30,16 +29,20 @@ def render(docs, retriever):
         st.write(f"{len(results[:3])} relevante Treffer gefunden:")
 
         for i, doc in enumerate(results[:3]):
-            # Render Result Card
+            # Karte mit Snippet anzeigen
             render_result_card(doc, i, query)
 
-            # Download Button für Originaldokument
+            # Download-Button für Originaldokument
             source_file = doc.metadata.get("source")
             if source_file:
-                with open(f"docs/{source_file}", "rb") as f:
-                    st.download_button(
-                        label="📄 Dokument herunterladen",
-                        data=f,
-                        file_name=source_file,
-                        mime="application/octet-stream"
-                    )
+                file_path = f"docs/{source_file}"
+                try:
+                    with open(file_path, "rb") as f:
+                        st.download_button(
+                            label="📄 Dokument herunterladen",
+                            data=f,
+                            file_name=source_file,
+                            mime="application/octet-stream"
+                        )
+                except FileNotFoundError:
+                    st.warning(f"Datei '{source_file}' nicht gefunden.")
