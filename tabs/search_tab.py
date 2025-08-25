@@ -6,8 +6,8 @@ def render(docs, retriever):
         st.warning("Keine Dokumente oder Retriever verfügbar.")
         return
 
-    query = st.text_area("Was für ein Dokument suchen Sie?", height=100)
-    show_debug = st.checkbox("🔬 Score-Tabelle anzeigen (Debug-Modus)")
+    query = st.text_area("Was für eine Vorlage suchen Sie?", height=100)
+    # show_debug = st.checkbox("🔬 Score-Tabelle anzeigen (Debug-Modus)")
 
     spacer, button_col = st.columns([6, 1.5])
     with button_col:
