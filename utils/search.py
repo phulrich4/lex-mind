@@ -1,85 +1,82 @@
 # utils/search.py
+from typing import List
 import re
 import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
+import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
-from typing import List, Tuple
+from rank_bm25 import BM25Okapi
+from langchain.docstore.document import Document
 
+# ------------------------------
+# Stopwords (deutsch)
+# ------------------------------
+STOPWORDS = {
+    "eine","und","für","der","die","das","mit","von","zur","zum","im","des",
+    "den","dem","ist","sind","auf","an","in","als","bei","auch","oder","nicht",
+    "wie","so","wir","sie","er","es","hat","haben","dass"
+}
 
-class Document:
-    """Minimaler Ersatz für LangChain Document"""
-    def __init__(self, page_content: str, metadata: dict = None):
-        self.page_content = page_content
-        self.metadata = metadata or {}
-
-
-class HybridRetriever:
-    def __init__(self, embedding_model, docs: List[Document], debug: bool = False):
-        self.embedding_model = embedding_model
+# ------------------------------
+# InMemory VectorStore
+# ------------------------------
+class InMemoryVectorStore:
+    def __init__(self, docs: List[Document], embedding_model):
         self.docs = docs
+        self.embedding_model = embedding_model
+        self.embeddings = embedding_model.encode(
+            [doc.page_content for doc in docs], 
+            convert_to_numpy=True
+        )
+
+    @classmethod
+    def from_documents(cls, docs: List[Document], embedding_model):
+        return cls(docs, embedding_model)
+
+    def similarity_search_with_score(self, query, k=10):
+        if not self.docs:
+            return []
+        query_emb = self.embedding_model.encode([query], convert_to_numpy=True)
+        sims = cosine_similarity(query_emb, self.embeddings)[0]
+        results = [(self.docs[i], float(sims[i])) for i in np.argsort(sims)[::-1][:k]]
+        return results
+
+# ------------------------------
+# HybridRetriever
+# ------------------------------
+class HybridRetriever:
+    def __init__(self, vectorstore: InMemoryVectorStore, texts: List[Document], embedding_model, debug: bool=False):
+        self.vectorstore = vectorstore
+        self.texts = texts
+        self.embedding_model = embedding_model
         self.debug = debug
 
-        # 🟢 Precompute Embeddings für alle Dokumente
-        if docs:
-            self.doc_embeddings = self.embedding_model.encode(
-                [doc.page_content for doc in docs], convert_to_numpy=True
-            )
-        else:
-            self.doc_embeddings = np.array([])
+    def preprocess(self, text: str) -> list[str]:
+        tokens = re.findall(r'\w+', text.lower())
+        return [t for t in tokens if t not in STOPWORDS]
 
-        # 🟢 BM25 / TF-IDF vorbereiten
-        self.vectorizer = TfidfVectorizer(stop_words="english")
-        self.corpus = [doc.page_content for doc in docs]
-        if self.corpus:
-            self.tfidf_matrix = self.vectorizer.fit_transform(self.corpus)
-        else:
-            self.tfidf_matrix = None
-
-    def preprocess(self, text: str) -> List[str]:
-        return re.findall(r"\w{4,}", text.lower())
-
-    def search(self, query: str, k: int = 3, alpha: float = 0.5) -> List[Tuple[Document, float]]:
-        """
-        Hybrid-Suche: kombiniert Embeddings (Cosine Similarity) + TF-IDF.
-        alpha: Gewichtung Embedding vs. BM25 (0=BM25 only, 1=Embeddings only)
-        """
-        scores_dict = {}
-
-        # 🟢 Embedding-Suche
-        if len(self.docs) > 0 and self.doc_embeddings.size > 0:
-            try:
-                query_emb = self.embedding_model.encode(query, convert_to_numpy=True)
-                query_emb = np.array(query_emb, dtype=np.float32).reshape(1, -1)
-
-                sims = cosine_similarity(query_emb, self.doc_embeddings)[0]
-                for i, score in enumerate(sims):
-                    scores_dict[self.docs[i]] = alpha * float(score)
-            except Exception as e:
-                print(f"[HybridRetriever] Embedding-Suche Fehler: {e}")
-
-        # 🟢 BM25 / TF-IDF-Suche
-        if self.tfidf_matrix is not None:
-            try:
-                query_vec = self.vectorizer.transform([query])
-                scores = cosine_similarity(query_vec, self.tfidf_matrix)[0]
-                for i, score in enumerate(scores):
-                    scores_dict[self.docs[i]] = scores_dict.get(self.docs[i], 0) + (1 - alpha) * float(score)
-            except Exception as e:
-                print(f"[HybridRetriever] BM25-Suche Fehler: {e}")
-
-        # 🟢 Top-k Ergebnisse sortiert zurückgeben
-        results = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)[:k]
-        return results
+    def extract_snippet(self, chunk: str, query: str, max_len: int = 300):
+        sentences = re.split(r'(?<=[.!?]) +', chunk)
+        query_tokens = self.preprocess(query)
+        scores = [
+            sum(word in query_tokens for word in re.findall(r'\w+', s.lower())) 
+            for s in sentences
+        ]
+        best_idx = int(np.argmax(scores)) if scores else 0
+        snippet = sentences[best_idx] if sentences else chunk
+        return snippet[:max_len] + ("…" if len(snippet) > max_len else "")
 
     def highlight_keywords(self, text: str, query: str, threshold: float = 0.75):
         try:
+            # Wörter im Text
             words = list(set(re.findall(r'\w{4,}', text)))
             if not words:
                 return text
 
             # Query-Embedding
             query_emb = self.embedding_model.encode(query, convert_to_numpy=True)
-            query_emb = np.array(query_emb, dtype=np.float32).reshape(1, -1)
+            query_emb = np.array(query_emb, dtype=np.float32)
+            if query_emb.ndim == 1:
+                query_emb = query_emb.reshape(1, -1)
 
             # Wort-Embeddings
             word_embs = self.embedding_model.encode(words, convert_to_numpy=True)
@@ -92,7 +89,7 @@ class HybridRetriever:
 
             sims = cosine_similarity(query_emb, word_embs)[0]
 
-            # Synonyme erweitern
+            # Synonyme
             synonym_map = {
                 "Zession": ["Abtretung", "Zessionserklärung"],
                 "Kapitalerhöhung": ["Kapitalband", "Erhöhung des Aktienkapitals"],
@@ -104,19 +101,6 @@ class HybridRetriever:
                 if any(t.lower() in query.lower() for t in [key] + syns):
                     extended_terms.update([s.lower() for s in [key] + syns])
 
-            # Debugging-Ansicht
-            if self.debug:
-                import pandas as pd
-                import streamlit as st
-                df = pd.DataFrame({
-                    "word": words,
-                    "similarity": sims,
-                    "highlighted": [sim >= threshold or w.lower() in extended_terms for w, sim in zip(words, sims)]
-                })
-                st.write("🔍 **Highlight-Debugging:**")
-                st.dataframe(df.sort_values("similarity", ascending=False).reset_index(drop=True))
-
-            # Wörter markieren
             highlighted = text
             for word, sim in zip(words, sims):
                 if sim >= threshold or word.lower() in extended_terms:
@@ -131,3 +115,8 @@ class HybridRetriever:
         except Exception as e:
             print(f"[highlight_keywords] Fehler: {e}")
             return text
+
+    def search(self, query: str, k: int = 3, alpha: float = 0.5, return_debug: bool=False):
+        # Embedding-Scores
+        embedding_results = self.vectorstore.similarity_search_with_score(query, k=len(self.texts))
+        embedding_scores = {doc.page_content: s
