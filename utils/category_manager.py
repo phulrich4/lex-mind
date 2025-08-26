@@ -17,6 +17,10 @@ CATEGORIES = {
         "statuten", "satzung", "gesellschafterliste", "geschäftsanteil", "übertragung", 
         "abtretung", "anteilsübertragung", "registergericht", "protokoll", "notariat"
     ],
+    "Klagen": [
+        "klage", "klagen", "gericht", "gerichtsurteil", "prozess", "rechtsstreit", "streitfall",
+        "rechtsstreitigkeit", "anwalt", "forderung", "gerichtsbeschluss", "verfahren"
+    ],
     "Andere": []  # Fallback
 }
 
