@@ -52,30 +52,56 @@ class HybridRetriever:
         return snippet[:max_len] + ("…" if len(snippet) > max_len else "")
 
     def highlight_keywords(self, text: str, query: str, threshold: float = 0.75):
-        words = list(set(re.findall(r'\w{4,}', text)))
-        query_emb = self.embedding_model.encode([query], convert_to_numpy=True)
-        word_embs = self.embedding_model.encode(words, convert_to_numpy=True)
-        sims = cosine_similarity(query_emb, word_embs)[0]
+        try:
+            # Kandidatenwörter (mind. 4 Zeichen, um Rauschen zu vermeiden)
+            words = list(set(re.findall(r'\w{4,}', text)))
+            if not words:
+                return text  # nichts zu highlighten
 
-        synonym_map = {
-            "Zession": ["Abtretung", "Zessionserklärung"],
-            "Kapitalerhöhung": ["Kapitalband", "Erhöhung des Aktienkapitals"],
-            "Dienstbarkeit": ["Leitungsrecht", "Wegrecht"],
-            "Kaufrecht": ["Vorkaufsrecht", "Vorhandrecht"]
-        }
+            # Query-Embedding
+            query_emb = self.embedding_model.encode(query, convert_to_numpy=True)
+            query_emb = np.array(query_emb)
+            if query_emb.ndim == 1:
+                query_emb = query_emb.reshape(1, -1)
 
-        extended_terms = set([w.lower() for w in self.preprocess(query)])
-        for key, syns in synonym_map.items():
-            if any(t.lower() in query.lower() for t in [key]+syns):
-                extended_terms.update([s.lower() for s in [key]+syns])
+            # Wort-Embeddings
+            word_embs = self.embedding_model.encode(words, convert_to_numpy=True)
+            word_embs = np.array(word_embs)
+            if word_embs.ndim == 1:
+                word_embs = word_embs.reshape(1, -1)
 
-        highlighted = text
-        for word, sim in zip(words, sims):
-            if sim >= threshold or word.lower() in extended_terms:
-                highlighted = re.sub(rf"\b({re.escape(word)})\b", r"<mark>\1</mark>", highlighted, flags=re.IGNORECASE)
-        return highlighted
+            # Cosine Similarity
+            sims = cosine_similarity(query_emb, word_embs)[0]
 
-    def search(self, query: str, k: int = 3, alpha: float = 0.5, return_debug: bool = False):
+            # Synonyme erweitern
+            synonym_map = {
+                "Zession": ["Abtretung", "Zessionserklärung"],
+                "Kapitalerhöhung": ["Kapitalband", "Erhöhung des Aktienkapitals"],
+                "Dienstbarkeit": ["Leitungsrecht", "Wegrecht"],
+                "Kaufrecht": ["Vorkaufsrecht", "Vorhandrecht"]
+            }
+            extended_terms = set([w.lower() for w in self.preprocess(query)])
+            for key, syns in synonym_map.items():
+                if any(t.lower() in query.lower() for t in [key] + syns):
+                    extended_terms.update([s.lower() for s in [key] + syns])
+
+            # Wörter markieren
+            highlighted = text
+            for word, sim in zip(words, sims):
+                if sim >= threshold or word.lower() in extended_terms:
+                    highlighted = re.sub(
+                        rf"\b({re.escape(word)})\b",
+                        r"<mark>\1</mark>",
+                        highlighted,
+                        flags=re.IGNORECASE
+                    )
+            return highlighted
+
+        except Exception as e:
+            print(f"[highlight_keywords] Fehler: {e}")
+            return text
+
+  def search(self, query: str, k: int = 3, alpha: float = 0.5, return_debug: bool = False):
         # Embedding-Scores
         embedding_results = self.vectorstore.similarity_search_with_score(query, k=len(self.texts))
         embedding_scores = {doc.page_content: score for doc, score in embedding_results}
