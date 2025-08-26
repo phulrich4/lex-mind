@@ -3,19 +3,31 @@ import re
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from langchain_community.vectorstores import FAISS
-from langchain.docstore.document import Document
 from typing import List, Tuple
 
 
+class Document:
+    """Minimaler Ersatz für LangChain Document"""
+    def __init__(self, page_content: str, metadata: dict = None):
+        self.page_content = page_content
+        self.metadata = metadata or {}
+
+
 class HybridRetriever:
-    def __init__(self, embedding_model, vectorstore: FAISS, docs: List[Document], debug: bool = False):
+    def __init__(self, embedding_model, docs: List[Document], debug: bool = False):
         self.embedding_model = embedding_model
-        self.vectorstore = vectorstore
         self.docs = docs
         self.debug = debug
 
-        # BM25 / TF-IDF vorbereiten
+        # 🟢 Precompute Embeddings für alle Dokumente
+        if docs:
+            self.doc_embeddings = self.embedding_model.encode(
+                [doc.page_content for doc in docs], convert_to_numpy=True
+            )
+        else:
+            self.doc_embeddings = np.array([])
+
+        # 🟢 BM25 / TF-IDF vorbereiten
         self.vectorizer = TfidfVectorizer(stop_words="english")
         self.corpus = [doc.page_content for doc in docs]
         if self.corpus:
@@ -28,71 +40,57 @@ class HybridRetriever:
 
     def search(self, query: str, k: int = 3, alpha: float = 0.5) -> List[Tuple[Document, float]]:
         """
-        Hybrid-Suche: kombiniert Embeddings (Vektorsuche) + TF-IDF (BM25-ähnlich).
+        Hybrid-Suche: kombiniert Embeddings (Cosine Similarity) + TF-IDF.
         alpha: Gewichtung Embedding vs. BM25 (0=BM25 only, 1=Embeddings only)
         """
-        results = []
+        scores_dict = {}
 
-        # Embedding-Suche
-        embedding_results = []
-        if self.vectorstore:
+        # 🟢 Embedding-Suche
+        if len(self.docs) > 0 and self.doc_embeddings.size > 0:
             try:
-                embedding_results = self.vectorstore.similarity_search_with_score(query, k=k * 2)
+                query_emb = self.embedding_model.encode(query, convert_to_numpy=True)
+                query_emb = np.array(query_emb, dtype=np.float32).reshape(1, -1)
+
+                sims = cosine_similarity(query_emb, self.doc_embeddings)[0]
+                for i, score in enumerate(sims):
+                    scores_dict[self.docs[i]] = alpha * float(score)
             except Exception as e:
                 print(f"[HybridRetriever] Embedding-Suche Fehler: {e}")
 
-        # BM25 / TF-IDF-Suche
-        bm25_results = []
+        # 🟢 BM25 / TF-IDF-Suche
         if self.tfidf_matrix is not None:
             try:
                 query_vec = self.vectorizer.transform([query])
                 scores = cosine_similarity(query_vec, self.tfidf_matrix)[0]
-                bm25_results = [(self.docs[i], float(scores[i])) for i in np.argsort(scores)[::-1][:k * 2]]
+                for i, score in enumerate(scores):
+                    scores_dict[self.docs[i]] = scores_dict.get(self.docs[i], 0) + (1 - alpha) * float(score)
             except Exception as e:
                 print(f"[HybridRetriever] BM25-Suche Fehler: {e}")
 
-        # Scores kombinieren
-        all_docs = {}
-        for doc, score in embedding_results:
-            all_docs[doc] = all_docs.get(doc, 0) + alpha * score
-        for doc, score in bm25_results:
-            all_docs[doc] = all_docs.get(doc, 0) + (1 - alpha) * score
-
-        # Top-k Ergebnisse sortiert zurückgeben
-        results = sorted(all_docs.items(), key=lambda x: x[1], reverse=True)[:k]
+        # 🟢 Top-k Ergebnisse sortiert zurückgeben
+        results = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)[:k]
         return results
 
     def highlight_keywords(self, text: str, query: str, threshold: float = 0.75):
         try:
-            # Kandidatenwörter (mind. 4 Zeichen, um Rauschen zu vermeiden)
             words = list(set(re.findall(r'\w{4,}', text)))
             if not words:
-                return text  # nichts zu highlighten
+                return text
 
-            # Query-Embedding robust bauen
+            # Query-Embedding
             query_emb = self.embedding_model.encode(query, convert_to_numpy=True)
-            query_emb = np.array(query_emb, dtype=np.float32)
-            if query_emb.ndim == 1:
-                query_emb = query_emb.reshape(1, -1)
+            query_emb = np.array(query_emb, dtype=np.float32).reshape(1, -1)
 
-            # Wort-Embeddings robust bauen
+            # Wort-Embeddings
             word_embs = self.embedding_model.encode(words, convert_to_numpy=True)
             word_embs = np.array(word_embs, dtype=np.float32)
-
-            # Spezialfall: nur ein Wort → (1, d)
             if word_embs.ndim == 1:
                 word_embs = word_embs.reshape(1, -1)
 
-            # Wenn Dimensionen nicht passen → abbrechen
             if query_emb.shape[1] != word_embs.shape[1]:
                 return text
 
-            # Cosine Similarity (Fehler sicher abfangen)
-            try:
-                sims = cosine_similarity(query_emb, word_embs)[0]
-            except Exception as inner_e:
-                print(f"[highlight_keywords] Cosine Error: {inner_e}")
-                return text
+            sims = cosine_similarity(query_emb, word_embs)[0]
 
             # Synonyme erweitern
             synonym_map = {
@@ -106,7 +104,7 @@ class HybridRetriever:
                 if any(t.lower() in query.lower() for t in [key] + syns):
                     extended_terms.update([s.lower() for s in [key] + syns])
 
-            # Debug-Ausgabe (falls aktiviert)
+            # Debugging-Ansicht
             if self.debug:
                 import pandas as pd
                 import streamlit as st
@@ -128,10 +126,8 @@ class HybridRetriever:
                         highlighted,
                         flags=re.IGNORECASE
                     )
-
             return highlighted
 
         except Exception as e:
-            # Fallback: unverändert zurückgeben
             print(f"[highlight_keywords] Fehler: {e}")
             return text
