@@ -24,14 +24,17 @@ def init_vectorstore():
     if not docs:
         return [], None, None
 
-    # Direkt SentenceTransformer verwenden
+    # Embedding-Modell
     embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-    vectorstore = InMemoryVectorStore.from_documents(docs, embedding=embedding_model)
+    
+    # InMemoryVectorStore initialisieren
+    vectorstore = InMemoryVectorStore.from_documents(docs, embedding_model)
+    
+    # HybridRetriever
     retriever = HybridRetriever(vectorstore, docs, embedding_model)
+    
     return docs, vectorstore, retriever
 
-if "docs" not in st.session_state or "vectorstore" not in st.session_state:
-    st.session_state.docs, st.session_state.vectorstore, st.session_state.retriever = init_vectorstore()
 
 # ---------------------------------------
 # App UI
