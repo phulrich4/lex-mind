@@ -4,6 +4,7 @@ import re
 import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 from rank_bm25 import BM25Okapi
 from langchain.docstore.document import Document
 
@@ -43,6 +44,8 @@ class InMemoryVectorStore:
 # ------------------------------
 # HybridRetriever
 # ------------------------------
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 class HybridRetriever:
     def __init__(self, vectorstore: InMemoryVectorStore, texts: List[Document], embedding_model, debug: bool=False):
         self.vectorstore = vectorstore
@@ -50,30 +53,48 @@ class HybridRetriever:
         self.embedding_model = embedding_model
         self.debug = debug
 
+        # TF-IDF vorbereiten
+        self.vectorizer = TfidfVectorizer(stop_words=list(STOPWORDS))
+        self.corpus = [doc.page_content for doc in texts]
+        if self.corpus:
+            self.tfidf_matrix = self.vectorizer.fit_transform(self.corpus)
+        else:
+            self.tfidf_matrix = None
+
     def preprocess(self, text: str) -> list[str]:
         tokens = re.findall(r'\w+', text.lower())
-        return [t for t in tokens if t not in STOPW]
+        return [t for t in tokens if t not in STOPWORDS]
 
     def search(self, query: str, k: int = 5, alpha: float = 0.5) -> List[Tuple[Document, float]]:
         """
-        Kombiniert Embedding-Suche + TF-IDF-Suche
+        Hybrid-Suche: kombiniert Embeddings + TF-IDF.
         alpha = Gewichtung (0 = nur TF-IDF, 1 = nur Embedding)
         """
-        results = {}
+        results: List[Tuple[Document, float]] = []
 
-        # Embedding-Suche
+        # --- Embedding-Suche ---
         if self.vectorstore:
             for doc, score in self.vectorstore.similarity_search_with_score(query, k=k*2):
-                results[doc] = results.get(doc, 0) + alpha * score
+                results.append((doc, alpha * score))
 
-        # TF-IDF-Suche
+        # --- TF-IDF-Suche ---
         if self.tfidf_matrix is not None:
             query_vec = self.vectorizer.transform([query])
             scores = cosine_similarity(query_vec, self.tfidf_matrix)[0]
             for idx in np.argsort(scores)[::-1][:k*2]:
                 doc = self.texts[idx]
-                score = float(scores[idx])
-                results[doc] = results.get(doc, 0) + (1 - alpha) * score
+                score = float(scores[idx]) * (1 - alpha)
 
-        # Sortieren + Top-k zurückgeben
-        return sorted(results.items(), key=lambda x: x[1], reverse=True)[:k]
+                # vorhandene Dokumente summieren
+                found = False
+                for i, (d, s) in enumerate(results):
+                    if d == doc:
+                        results[i] = (d, s + score)
+                        found = True
+                        break
+                if not found:
+                    results.append((doc, score))
+
+        # --- Sortieren und Top-k zurückgeben ---
+        results = sorted(results, key=lambda x: x[1], reverse=True)[:k]
+        return results
