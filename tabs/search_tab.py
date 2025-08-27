@@ -3,12 +3,12 @@ import streamlit as st
 from utils.result_card import render_result_card
 from utils.search import HybridRetriever
 
-def render(docs, retriever):
+def render(docs, retriever: HybridRetriever):
     if not docs or not retriever:
         st.warning("Keine Dokumente oder Retriever verfügbar.")
         return
 
-    # Suchmodus fix auf Hybrid
+    # Gewichtung zwischen Embedding- und Keyword-Suche (0 = nur BM25, 1 = nur Embedding)
     alpha = 0.5
 
     # Texteingabe für die Suchanfrage
@@ -18,14 +18,18 @@ def render(docs, retriever):
         height=100
     )
 
+    # Button für Suche
     search = st.button("🔍 Suche")
 
     if search and query.strip():
-        results = retriever.get_relevant_documents(query)
+        # HybridRetriever: eigene .search() Methode nutzen
+        results = retriever.search(query, k=10, alpha=alpha)
+
         if not results:
             st.warning("⚠️ Keine relevanten Dokumente gefunden.")
         else:
             st.write(f"{len(results)} relevante Treffer gefunden:")
+
             for i, doc in enumerate(results):
                 # Dateiname und Kategorie anzeigen
                 filename = doc.metadata.get("source", "–")
@@ -37,10 +41,13 @@ def render(docs, retriever):
 
                 # Download Button
                 file_path = f"docs/{filename}"
-                if st.button(f"📄 Download {filename}", key=f"download_{i}"):
+                try:
                     with open(file_path, "rb") as f:
                         st.download_button(
-                            label="Download",
+                            label=f"📄 Download {filename}",
                             data=f,
-                            file_name=filename
+                            file_name=filename,
+                            key=f"download_{i}"
                         )
+                except FileNotFoundError:
+                    st.error(f"Datei {filename} nicht gefunden.")
