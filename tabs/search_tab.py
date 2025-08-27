@@ -21,7 +21,7 @@ def render(docs, retriever):
     search = st.button("🔍 Suche")
 
     if search and query.strip():
-        results = retriever.search(query, k=10, alpha=alpha)
+        results = retriever.get_relevant_documents(query)
         if not results:
             st.warning("⚠️ Keine relevanten Dokumente gefunden.")
         else:
