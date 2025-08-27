@@ -30,12 +30,6 @@ def render(docs, retriever: HybridRetriever):
         else:
             st.write(f"{len(results)} relevante Treffer gefunden:")
 
-            for i, doc in enumerate(results):
-                # Dateiname und Kategorie anzeigen
-                filename = doc.metadata.get("source", "–")
-                category = doc.metadata.get("category", "–")
-                st.markdown(f"**{filename}**  |  Kategorie: *{category}*")
-
             for i, (doc, score) in enumerate(results):
                 # Dateiname und Kategorie anzeigen
                 filename = doc.metadata.get("source", "–")
