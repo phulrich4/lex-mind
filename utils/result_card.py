@@ -57,3 +57,7 @@ def render_result_card(doc, idx, query):
     
     # Snippet anzeigen
     st.markdown(snippet)
+
+    # HTML Snippet anzeigen über st.components
+    from streamlit.components.v1 import html
+    html(f"<div style='font-size: 16px; line-height: 1.4;'>{snippet}</div>", height=200)
