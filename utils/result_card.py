@@ -44,7 +44,8 @@ def render_result_card(doc, idx, query):
 
     # Suchbegriffe hervorheben (case-insensitive)
     for term in query.split():
-        snippet = re.sub(f"(?i){re.escape(term)}", f"**{term}**", snippet)
+        snippet = re.sub(f"(?i){re.escape(term)}", r'<mark>\g<0></mark>', snippet)
+
 
     # Überschrift anzeigen
     st.markdown(f"### Treffer {idx+1}: {doc.metadata.get('heading', '')}")
