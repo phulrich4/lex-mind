@@ -35,7 +35,7 @@ def highlight_semantic_terms(text, query, embedding_model, threshold=0.7):
 
 def render_result_card(doc, idx, query):
     """
-    Zeigt den Textabschnitt als Karte an, markiert Suchbegriffe und gibt Snippet zurück.
+    Zeigt den Textabschnitt als Karte an, markiert Suchbegriffe.
     """
     # Snippet (erste 500 Zeichen)
     snippet = str(doc.page_content[:500])
@@ -51,6 +51,3 @@ def render_result_card(doc, idx, query):
     
     # Snippet anzeigen
     st.markdown(snippet)
-    
-    # Snippet zurückgeben (optional, falls du es später weiterverarbeiten willst)
-    return snippet
