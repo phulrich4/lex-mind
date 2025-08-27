@@ -52,4 +52,4 @@ class HybridRetriever:
 
     def preprocess(self, text: str) -> list[str]:
         tokens = re.findall(r'\w+', text.lower())
-        return [t for t in tokens if t not in STOPW]()
+        return [t for t in tokens if t not in STOPW]
