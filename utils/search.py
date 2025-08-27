@@ -1,5 +1,5 @@
 # utils/search.py
-from typing import List
+from typing import List, Tuple
 import re
 import numpy as np
 import pandas as pd
