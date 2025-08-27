@@ -36,6 +36,12 @@ def render(docs, retriever: HybridRetriever):
                 category = doc.metadata.get("category", "–")
                 st.markdown(f"**{filename}**  |  Kategorie: *{category}*")
 
+            for i, (doc, score) in enumerate(results):
+                # Dateiname und Kategorie anzeigen
+                filename = doc.metadata.get("source", "–")
+                category = doc.metadata.get("category", "–")
+                st.markdown(f"**{filename}**  |  Kategorie: *{category}*  |  Score: {score:.3f}")
+
                 # Snippet mit Highlight
                 render_result_card(doc, i, query)
 
