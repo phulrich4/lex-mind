@@ -53,3 +53,27 @@ class HybridRetriever:
     def preprocess(self, text: str) -> list[str]:
         tokens = re.findall(r'\w+', text.lower())
         return [t for t in tokens if t not in STOPW]
+
+    def search(self, query: str, k: int = 5, alpha: float = 0.5) -> List[Tuple[Document, float]]:
+        """
+        Kombiniert Embedding-Suche + TF-IDF-Suche
+        alpha = Gewichtung (0 = nur TF-IDF, 1 = nur Embedding)
+        """
+        results = {}
+
+        # Embedding-Suche
+        if self.vectorstore:
+            for doc, score in self.vectorstore.similarity_search_with_score(query, k=k*2):
+                results[doc] = results.get(doc, 0) + alpha * score
+
+        # TF-IDF-Suche
+        if self.tfidf_matrix is not None:
+            query_vec = self.vectorizer.transform([query])
+            scores = cosine_similarity(query_vec, self.tfidf_matrix)[0]
+            for idx in np.argsort(scores)[::-1][:k*2]:
+                doc = self.texts[idx]
+                score = float(scores[idx])
+                results[doc] = results.get(doc, 0) + (1 - alpha) * score
+
+        # Sortieren + Top-k zurückgeben
+        return sorted(results.items(), key=lambda x: x[1], reverse=True)[:k]
