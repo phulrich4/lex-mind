@@ -35,21 +35,22 @@ def highlight_semantic_terms(text, query, embedding_model, threshold=0.7):
 
 def render_result_card(doc, idx, query):
     """
-    Zeigt den Textabschnitt als Karte an, markiert Suchbegriffe und erlaubt Download.
+    Zeigt den Textabschnitt als Karte an, markiert Suchbegriffe und gibt Snippet zurück.
     """
-    # Snippet extrahieren und sicherstellen, dass es ein String ist
+    # Snippet (erste 500 Zeichen)
     snippet = str(doc.page_content[:500])
     if len(doc.page_content) > 500:
         snippet += "…"
 
-    # Suchbegriffe hervorheben (Markdown)
+    # Suchbegriffe hervorheben (case-insensitive)
     for term in query.split():
-        if term.lower() in snippet.lower():
-            # Case-insensitive ersetzen
-            snippet = re.sub(f"(?i){re.escape(term)}", f"**{term}**", snippet)
+        snippet = re.sub(f"(?i){re.escape(term)}", f"**{term}**", snippet)
 
-    # Überschrift und Snippet anzeigen
+    # Überschrift anzeigen
     st.markdown(f"### Treffer {idx+1}: {doc.metadata.get('heading', '')}")
+    
+    # Snippet anzeigen
     st.markdown(snippet)
-
-
+    
+    # Snippet zurückgeben (optional, falls du es später weiterverarbeiten willst)
+    return snippet
