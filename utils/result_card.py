@@ -42,9 +42,14 @@ def render_result_card(doc, idx, query):
     if len(doc.page_content) > 500:
         snippet += "…"
 
-    # Suchbegriffe hervorheben (case-insensitive)
+    # Suchbegriffe gelb hervorheben
     for term in query.split():
-        snippet = re.sub(f"(?i){re.escape(term)}", r'<mark>\g<0></mark>', snippet)
+        # Case-insensitive, HTML Inline-Style für gelbe Farbe
+        snippet = re.sub(
+            f"(?i){re.escape(term)}",
+            r'<span style="background-color: yellow;">\g<0></span>',
+            snippet
+        )
 
 
     # Überschrift anzeigen
