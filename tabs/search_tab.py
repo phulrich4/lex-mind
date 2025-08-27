@@ -45,7 +45,7 @@ def render(docs, retriever: HybridRetriever):
                 snippet = render_result_card(doc, i, query)  # hier wird der Text schon zurückgegeben
                 # Optional: zusätzliche Highlight-Logik direkt hier, falls render_result_card es nicht macht
                 for term in query.lower().split():
-                snippet = snippet.replace(term, f"**{term}**")
+                    snippet = snippet.replace(term, f"**{term}**")
                 st.markdown(snippet, unsafe_allow_html=True)
 
                 # Download Button
