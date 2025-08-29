@@ -32,32 +32,52 @@ def highlight_semantic_terms(text, query, embedding_model, threshold=0.7):
 
     return text
 
-
 def render_result_card(doc, idx, query):
     """
-    Zeigt den Textabschnitt als Karte an, markiert Suchbegriffe.
+    Zeigt einen Suchtreffer im Karten-Design inkl. Download an.
     """
-    # Snippet (erste 500 Zeichen)
-    snippet = str(doc.page_content[:500])
-    if len(doc.page_content) > 500:
-        snippet += "…"
+    title = doc.metadata.get("heading", doc.metadata.get("source", f"Treffer {idx+1}"))
+    category = doc.metadata.get("category", "–")
+    year = doc.metadata.get("year", "–")
+    snippet = doc.page_content[:250] + ("…" if len(doc.page_content) > 250 else "")
 
-    # Suchbegriffe gelb hervorheben
-    for term in query.split():
-        # Case-insensitive, HTML Inline-Style für gelbe Farbe
-        snippet = re.sub(
-            f"(?i){re.escape(term)}",
-            r'<span style="background-color: yellow;">\g<0></span>',
-            snippet
-        )
+    # Hervorhebung
+    snippet = highlight_terms(snippet, query)
 
+    file_path = doc.metadata.get("source")
+    file_name = os.path.basename(file_path) if file_path else "Dokument"
 
-    # Überschrift anzeigen
-    st.markdown(f"### Treffer {idx+1}: {doc.metadata.get('heading', '')}")
-    
-    # Snippet anzeigen
-    st.markdown(snippet)
+    with st.container():
+        st.markdown("---")  # Trennlinie zwischen Treffern
+        st.markdown(f"### {title}")
 
-    # HTML Snippet anzeigen über st.components
-    from streamlit.components.v1 import html
-    html(f"<div style='font-size: 16px; line-height: 1.4;'>{snippet}</div>", height=200)
+        # Badges
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            st.markdown(
+                f"<span style='background-color:#E5E7EB; padding:3px 8px; border-radius:8px;'>{category}</span>",
+                unsafe_allow_html=True
+            )
+        with col2:
+            st.markdown(
+                f"<span style='background-color:#F87171; padding:3px 8px; border-radius:8px;'>PDF</span>",
+                unsafe_allow_html=True
+            )
+        with col3:
+            st.markdown(
+                f"<span style='background-color:#BFDBFE; padding:3px 8px; border-radius:8px;'>{year}</span>",
+                unsafe_allow_html=True
+            )
+
+        # Snippet
+        st.markdown(f"<p style='color:#374151;'>{snippet}</p>", unsafe_allow_html=True)
+
+        # Download-Button falls Datei vorhanden
+        if file_path and os.path.exists(file_path):
+            with open(file_path, "rb") as f:
+                st.download_button(
+                    label=f"📥 {file_name} herunterladen",
+                    data=f,
+                    file_name=file_name,
+                    mime="application/pdf"
+                )
