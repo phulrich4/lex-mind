@@ -44,6 +44,7 @@ def extract_chunks_from_pdf(path):
                 page_content=chunk["content"],
                 metadata={
                     "source": os.path.basename(path),
+                    "path": path,
                     "page": i,
                     "heading": chunk["heading"]
                 }
@@ -69,6 +70,7 @@ def extract_chunks_from_docx(path):
             page_content=chunk["content"],
             metadata={
                 "source": os.path.basename(path),
+                "path": path,
                 "page": None,
                 "heading": chunk["heading"]
             }
