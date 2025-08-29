@@ -98,6 +98,10 @@ def render_result_card(doc, idx, query, embedding_model=None):
         # Snippet anzeigen
         st.markdown(f"<p style='color:#374151;'>{snippet}</p>", unsafe_allow_html=True)
 
+        # HTML Snippet anzeigen über st.components
+        from streamlit.components.v1 import html
+        html(f"<div style='font-size: 16px; line-height: 1.4;'>{snippet}</div>", height=200)
+
         # Download-Button
         if file_path and os.path.exists(file_path):
             mime = "application/pdf" if file_name.endswith(".pdf") else \
