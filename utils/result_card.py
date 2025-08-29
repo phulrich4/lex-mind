@@ -32,17 +32,26 @@ def highlight_semantic_terms(text, query, embedding_model, threshold=0.7):
 
     return text
 
-def render_result_card(doc, idx, query):
+def render_result_card(doc, idx, query, embedding_model=None):
     """
-    Zeigt einen Suchtreffer im Karten-Design inkl. Download an.
+    Zeigt einen Suchtreffer im Karten-Design inkl. semantischem Highlighting.
     """
     title = doc.metadata.get("heading", doc.metadata.get("source", f"Treffer {idx+1}"))
     category = doc.metadata.get("category", "–")
     year = doc.metadata.get("year", "–")
     snippet = doc.page_content[:250] + ("…" if len(doc.page_content) > 250 else "")
 
-    # Hervorhebung
-    snippet = highlight_terms(snippet, query)
+    # 🔹 Semantisches Highlighting anwenden (falls Modell verfügbar)
+    if embedding_model:
+        snippet = highlight_semantic_terms(snippet, query, embedding_model)
+    else:
+        # fallback: einfache Keyword-Hervorhebung
+        for term in query.split():
+            snippet = re.sub(
+                f"(?i){re.escape(term)}",
+                r'<span style="background-color: yellow;">\g<0></span>',
+                snippet
+            )
 
     file_path = doc.metadata.get("source")
     file_name = os.path.basename(file_path) if file_path else "Dokument"
@@ -69,7 +78,7 @@ def render_result_card(doc, idx, query):
                 unsafe_allow_html=True
             )
 
-        # Snippet
+        # Snippet anzeigen
         st.markdown(f"<p style='color:#374151;'>{snippet}</p>", unsafe_allow_html=True)
 
         # Download-Button falls Datei vorhanden
