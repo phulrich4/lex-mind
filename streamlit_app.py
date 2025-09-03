@@ -50,6 +50,15 @@ if "vectorstore" not in st.session_state:
 if "retriever" not in st.session_state:
     st.session_state.retriever = None
 
+# **Neu: search_queries initialisieren**
+if "search_queries" not in st.session_state:
+    st.session_state.search_queries = []
+
+# Optional: Suchergebnisse (falls search_tab sie nutzt)
+if "search_results" not in st.session_state:
+    st.session_state.search_results = []
+    
+# Vectorstore & Retriever initialisieren, falls noch nicht vorhanden
 if not st.session_state.retriever:
     st.session_state.docs, st.session_state.vectorstore, st.session_state.retriever = init_vectorstore()
 
