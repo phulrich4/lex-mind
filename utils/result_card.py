@@ -31,7 +31,10 @@ def highlight_semantic_terms(text, query, embedding_model, threshold=0.7):
     for word, sim in zip(words_filtered, similarities):
         if sim >= threshold:
             pattern = re.compile(rf"\b{re.escape(word)}\b", re.IGNORECASE)
-            text = pattern.sub(f"<mark>{word}</mark>", text)
+            text = pattern.sub(
+                f"<span style='background-color:#FEF08A; border-radius:3px; padding:0 2px;'>{word}</span>",
+                text
+            )    
 
     return text
 
@@ -100,7 +103,14 @@ def render_result_card(doc, idx, query, embedding_model=None):
 
         # HTML Snippet anzeigen über st.components
         from streamlit.components.v1 import html
-        html(f"<div style='font-size: 16px; line-height: 1.4;'>{snippet}</div>", height=200)
+        html(f"""
+            <div style='font-size:16px; line-height:1.4; 
+                        max-height:200px; overflow-y:auto; 
+                        padding:8px; background-color:#F9FAFB; 
+                        border-radius:8px;'>
+                {snippet}
+            </div>
+        """, height=220)
 
         # Download-Button
         if file_path and os.path.exists(file_path):
