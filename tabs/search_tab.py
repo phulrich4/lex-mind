@@ -2,6 +2,7 @@
 import streamlit as st
 from utils.result_card import render_result_card
 from utils.search import HybridRetriever
+from datetime import datetime
 
 def render(docs, retriever: HybridRetriever):
     if not docs or not retriever:
