@@ -69,3 +69,6 @@ with tab_suche:
 
 with tab_dokumente:
     documents_tab.render(st.session_state.docs)
+
+with tab_admin:
+    admin_tab.render()
