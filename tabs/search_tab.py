@@ -30,6 +30,7 @@ def render(docs, retriever: HybridRetriever):
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "query": query.strip(),
             "results_count": len(results)
+        })
 
         if not results:
             st.warning("⚠️ Keine relevanten Dokumente gefunden.")
