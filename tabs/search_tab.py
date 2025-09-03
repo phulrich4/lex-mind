@@ -25,6 +25,12 @@ def render(docs, retriever: HybridRetriever):
         # HybridRetriever: eigene .search() Methode nutzen
         results = retriever.search(query, k=10, alpha=alpha)
 
+        # --- Logging ins Session State ---
+        st.session_state.search_queries.append({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "query": query.strip(),
+            "results_count": len(results)
+
         if not results:
             st.warning("⚠️ Keine relevanten Dokumente gefunden.")
         else:
