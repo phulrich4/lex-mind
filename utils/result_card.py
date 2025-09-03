@@ -96,7 +96,7 @@ def render_result_card(doc, idx, query, embedding_model=None):
             )
 
         # Snippet anzeigen
-        st.markdown(f"<p style='color:#374151;'>{snippet}</p>", unsafe_allow_html=True)
+        # st.markdown(f"<p style='color:#374151;'>{snippet}</p>", unsafe_allow_html=True)
 
         # HTML Snippet anzeigen über st.components
         from streamlit.components.v1 import html
