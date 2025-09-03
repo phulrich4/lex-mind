@@ -111,5 +111,6 @@ def render_result_card(doc, idx, query, embedding_model=None):
                     label=f"📥 {file_name} herunterladen",
                     data=f,
                     file_name=file_name,
-                    mime=mime
+                    mime=mime,
+                    key=f"download-{idx}-{file_name}"
                 )
