@@ -59,7 +59,7 @@ if not st.session_state.retriever:
 st.title("LexMind - KI-Assistent für Juristen")
 st.write("Durchsuchen Sie juristische Vorlagen mit KI. Intelligent, schnell und präzise.")
 
-tab_suche, tab_dokumente = st.tabs(["Suche", "Dokumente", "Admin"])
+tab_suche, tab_dokumente, tab_admin = st.tabs(["Suche", "Dokumente", "Admin"])
 
 with tab_suche:
     if st.session_state.retriever:
