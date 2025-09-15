@@ -3,6 +3,7 @@
 import streamlit as st
 import re
 import os
+import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 # -------------------------------
@@ -22,9 +23,17 @@ def highlight_semantic_terms(text, query, embedding_model, threshold=0.7):
     if not words_filtered:
         return text
 
-    query_embedding = embedding_model.embed_query(query)
-    word_embeddings = embedding_model.client.encode(words_filtered)
+    # --- Query-Embedding je nach Modelltyp ---
+    if hasattr(embedding_model, "embed_query"):  
+        # LangChain Embedding
+        query_embedding = embedding_model.embed_query(query)
+        word_embeddings = embedding_model.client.encode(words_filtered)
+    else:
+        # SentenceTransformer
+        query_embedding = embedding_model.encode([query])[0]
+        word_embeddings = embedding_model.encode(words_filtered)
 
+    # Similarities berechnen
     similarities = cosine_similarity([query_embedding], word_embeddings)[0]
 
     for word, sim in zip(words_filtered, similarities):
@@ -33,7 +42,7 @@ def highlight_semantic_terms(text, query, embedding_model, threshold=0.7):
             text = pattern.sub(
                 f"<span style='background-color:#FEF08A; border-radius:3px; padding:0 2px;'>{word}</span>",
                 text
-            )    
+            )
 
     return text
 
