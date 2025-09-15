@@ -47,7 +47,6 @@ def highlight_semantic_terms(text, query, embedding_model, threshold=0.7):
 
     return text
 
-
 # -------------------------------
 # Result Card Rendering
 # -------------------------------
@@ -76,36 +75,36 @@ def render_result_card(doc, idx, query, embedding_model=None, score=None):
                 r'<span style="background-color: yellow;">\g<0></span>',
                 snippet
             )
-with st.container():
-    # Card HTML
-    card_html = f"""
-        <div style='border:1px solid #E5E7EB; border-radius:12px; padding:16px; margin-bottom:16px; background-color:white;'>
-            {title}
-            <p style="font-size:14px; color:#374151; margin-top:4px;">
-                Kategorie: <b>{category}</b> &nbsp; | &nbsp;
-                Score: <b>{score_str}</b> &nbsp; | &nbsp;
-                Typ: <b>{doc_type}</b>
-            </p>
-            <div style='font-size:15px; line-height:1.5; 
-                        padding:10px; background-color:#F9FAFB; 
-                        border-radius:8px; margin:12px 0;'>
-                {snippet}
-            </div>
-    """
-    st.markdown(card_html, unsafe_allow_html=True)
 
-    # Download Button (separat)
-    if file_path and os.path.exists(file_path):
-        with open(file_path, "rb") as f:
-            st.download_button(
-                label=f"📥 {file_name} herunterladen",
-                data=f,
-                file_name=file_name,
-                mime="application/pdf" if file_name.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                key=f"download-{idx}-{file_name}"
-            )
+    # --- Card Container ---
+    with st.container():
+        # Card HTML
+        card_html = f"""
+            <div style='border:1px solid #E5E7EB; border-radius:12px; padding:16px; margin-bottom:16px; background-color:white;'>
+                {title}
+                <p style="font-size:14px; color:#374151; margin-top:4px;">
+                    Kategorie: <b>{category}</b> &nbsp; | &nbsp;
+                    Score: <b>{score_str}</b> &nbsp; | &nbsp;
+                    Typ: <b>{doc_type}</b>
+                </p>
+                <div style='font-size:15px; line-height:1.5; 
+                            padding:10px; background-color:#F9FAFB; 
+                            border-radius:8px; margin:12px 0;'>
+                    {snippet}
+                </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
 
-    # Card schließen
-    st.markdown("</div>", unsafe_allow_html=True)
+        # Download Button (separat)
+        if file_path and os.path.exists(file_path):
+            with open(file_path, "rb") as f:
+                st.download_button(
+                    label=f"📥 {file_name} herunterladen",
+                    data=f,
+                    file_name=file_name,
+                    mime="application/pdf" if file_name.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    key=f"download-{idx}-{file_name}"
+                )
 
-
+        # Card schließen
+        st.markdown("</div>", unsafe_allow_html=True)
