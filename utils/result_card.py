@@ -76,11 +76,9 @@ def render_result_card(doc, idx, query, embedding_model=None, score=None):
                 r'<span style="background-color: yellow;">\g<0></span>',
                 snippet
             )
-
-   # --- Card im Container bauen ---
 with st.container():
-    st.markdown(
-        f"""
+    # Card HTML
+    card_html = f"""
         <div style='border:1px solid #E5E7EB; border-radius:12px; padding:16px; margin-bottom:16px; background-color:white;'>
             {title}
             <p style="font-size:14px; color:#374151; margin-top:4px;">
@@ -93,24 +91,21 @@ with st.container():
                         border-radius:8px; margin:12px 0;'>
                 {snippet}
             </div>
-        """,
-        unsafe_allow_html=True
-    )
+    """
+    st.markdown(card_html, unsafe_allow_html=True)
 
-    # Download als Column-Button innerhalb des gleichen Rahmens
+    # Download Button (separat)
     if file_path and os.path.exists(file_path):
-        col1, col2 = st.columns([1,4])
-        with col1:
-            with open(file_path, "rb") as f:
-                st.download_button(
-                    label=f"📥 Herunterladen",
-                    data=f,
-                    file_name=file_name,
-                    mime="application/pdf" if file_name.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    key=f"download-{idx}-{file_name}"
-                )
-        # Optional: leere Spalte für Abstand
-        col2.write("")
+        with open(file_path, "rb") as f:
+            st.download_button(
+                label=f"📥 {file_name} herunterladen",
+                data=f,
+                file_name=file_name,
+                mime="application/pdf" if file_name.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                key=f"download-{idx}-{file_name}"
+            )
 
+    # Card schließen
     st.markdown("</div>", unsafe_allow_html=True)
+
 
