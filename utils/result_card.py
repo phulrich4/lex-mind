@@ -5,7 +5,6 @@ import re
 import os
 from sklearn.metrics.pairwise import cosine_similarity
 
-
 # -------------------------------
 # Semantisches Highlighting
 # -------------------------------
@@ -42,29 +41,19 @@ def highlight_semantic_terms(text, query, embedding_model, threshold=0.7):
 # -------------------------------
 # Result Card Rendering
 # -------------------------------
-def render_result_card(doc, idx, query, embedding_model=None):
-    """
-    Zeigt einen Suchtreffer im Karten-Design inkl. semantischem Highlighting,
-    Dateiname, Kategorie, Jahr und Download-Option.
-    """
-    # Metadaten holen
-    file_path = doc.metadata.get("path")  # vollständiger Pfad (falls vorhanden)
-    file_name = doc.metadata.get("source", "Dokument")  # nur Dateiname
-    page = doc.metadata.get("page", None)
-    heading = doc.metadata.get("heading", None)
+def render_result_card(doc, idx, query, embedding_model=None, score=None):
+    file_path = doc.metadata.get("path")
+    file_name = doc.metadata.get("source", "Dokument")
     category = doc.metadata.get("category", "–")
-    year = doc.metadata.get("year", "–")
 
-    # Titelzeile
-    title_parts = [f"**{file_name}**"]
-    if page:
-        title_parts.append(f"(Seite {page})")
-    if heading and heading != "–":
-        title_parts.append(f"– {heading}")
-    title = " ".join(title_parts)
+    # Dokumenttyp bestimmen
+    doc_type = "PDF" if file_name.lower().endswith(".pdf") else "DOCX"
 
-    # Snippet bauen
-    snippet = doc.page_content[:250] + ("…" if len(doc.page_content) > 250 else "")
+    # Titel
+    title = f"### {file_name}"
+
+    # Snippet
+    snippet = doc.page_content[:300] + ("…" if len(doc.page_content) > 300 else "")
     if embedding_model:
         snippet = highlight_semantic_terms(snippet, query, embedding_model)
     else:
@@ -75,44 +64,31 @@ def render_result_card(doc, idx, query, embedding_model=None):
                 snippet
             )
 
-    # Rendering
     with st.container():
-        st.markdown("---")  # Trenner
-        st.markdown(f"### {title}")
+        st.markdown(
+            f"""
+            <div style='border:1px solid #E5E7EB; border-radius:12px; padding:16px; margin-bottom:16px; background-color:white;'>
+                {title}
+                <p style="font-size:14px; color:#374151; margin-top:4px;">
+                    Kategorie: <b>{category}</b> &nbsp; | &nbsp;
+                    Score: <b>{score:.3f if score else "–"}</b> &nbsp; | &nbsp;
+                    Typ: <b>{doc_type}</b>
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        # Badges
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            st.markdown(
-                f"<span style='background-color:#E5E7EB; padding:3px 8px; border-radius:8px;'>{category}</span>",
-                unsafe_allow_html=True
-            )
-        with col2:
-            st.markdown(
-                f"<span style='background-color:#F87171; padding:3px 8px; border-radius:8px;'>PDF/DOCX</span>",
-                unsafe_allow_html=True
-            )
-        with col3:
-            st.markdown(
-                f"<span style='background-color:#BFDBFE; padding:3px 8px; border-radius:8px;'>{year}</span>",
-                unsafe_allow_html=True
-            )
-
-        # Snippet anzeigen
-        # st.markdown(f"<p style='color:#374151;'>{snippet}</p>", unsafe_allow_html=True)
-
-        # HTML Snippet anzeigen über st.components
         from streamlit.components.v1 import html
         html(f"""
-            <div style='font-size:16px; line-height:1.4; 
-                        max-height:200px; overflow-y:auto; 
-                        padding:8px; background-color:#F9FAFB; 
-                        border-radius:8px;'>
+            <div style='font-size:15px; line-height:1.5; 
+                        padding:10px; background-color:#F9FAFB; 
+                        border-radius:8px; margin:8px 0;'>
                 {snippet}
             </div>
-        """, height=220)
+        """, height=180)
 
-        # Download-Button
+        # Download Button
         if file_path and os.path.exists(file_path):
             mime = "application/pdf" if file_name.endswith(".pdf") else \
                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
