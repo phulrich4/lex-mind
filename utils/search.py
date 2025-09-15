@@ -44,7 +44,6 @@ class InMemoryVectorStore:
 # ------------------------------
 # HybridRetriever
 # ------------------------------
-from sklearn.feature_extraction.text import TfidfVectorizer
 
 class HybridRetriever:
     def __init__(self, vectorstore: InMemoryVectorStore, texts: List[Document], embedding_model, debug: bool=False):
@@ -53,13 +52,13 @@ class HybridRetriever:
         self.embedding_model = embedding_model
         self.debug = debug
 
-        # TF-IDF vorbereiten
-        self.vectorizer = TfidfVectorizer(stop_words=list(STOPWORDS))
+        # BM25 vorbereiten
         self.corpus = [doc.page_content for doc in texts]
-        if self.corpus:
-            self.tfidf_matrix = self.vectorizer.fit_transform(self.corpus)
+        self.tokenized_corpus = [self.preprocess(doc.page_content) for doc in texts]
+        if self.tokenized_corpus:
+            self.bm25 = BM25Okapi(self.tokenized_corpus)
         else:
-            self.tfidf_matrix = None
+            self.bm25 = None
 
     def preprocess(self, text: str) -> list[str]:
         tokens = re.findall(r'\w+', text.lower())
@@ -67,8 +66,8 @@ class HybridRetriever:
 
     def search(self, query: str, k: int = 5, alpha: float = 0.5) -> List[Tuple[Document, float]]:
         """
-        Hybrid-Suche: kombiniert Embeddings + TF-IDF.
-        alpha = Gewichtung (0 = nur TF-IDF, 1 = nur Embedding)
+        Hybrid-Suche: kombiniert Embeddings + BM25.
+        alpha = Gewichtung (0 = nur BM25, 1 = nur Embedding)
         """
         results: List[Tuple[Document, float]] = []
 
@@ -77,10 +76,10 @@ class HybridRetriever:
             for doc, score in self.vectorstore.similarity_search_with_score(query, k=k*2):
                 results.append((doc, alpha * score))
 
-        # --- TF-IDF-Suche ---
-        if self.tfidf_matrix is not None:
-            query_vec = self.vectorizer.transform([query])
-            scores = cosine_similarity(query_vec, self.tfidf_matrix)[0]
+        # --- BM25-Suche ---
+        if self.bm25 is not None:
+            tokenized_query = self.preprocess(query)
+            scores = self.bm25.get_scores(tokenized_query)
             for idx in np.argsort(scores)[::-1][:k*2]:
                 doc = self.texts[idx]
                 score = float(scores[idx]) * (1 - alpha)
@@ -97,4 +96,9 @@ class HybridRetriever:
 
         # --- Sortieren und Top-k zurückgeben ---
         results = sorted(results, key=lambda x: x[1], reverse=True)[:k]
+
+        if self.debug:
+            print("Query:", query)
+            print("Results:", [(d.metadata.get("source", "unknown"), round(s, 3)) for d, s in results])
+
         return results
