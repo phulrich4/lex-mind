@@ -6,6 +6,7 @@ import os
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
+
 # -------------------------------
 # Semantisches Highlighting
 # -------------------------------
@@ -76,6 +77,7 @@ def render_result_card(doc, idx, query, embedding_model=None, score=None):
                 snippet
             )
 
+    # --- Alles in einem Card-Rahmen ---
     with st.container():
         st.markdown(
             f"""
@@ -86,21 +88,16 @@ def render_result_card(doc, idx, query, embedding_model=None, score=None):
                     Score: <b>{score_str}</b> &nbsp; | &nbsp;
                     Typ: <b>{doc_type}</b>
                 </p>
-            </div>
+                <div style='font-size:15px; line-height:1.5; 
+                            padding:10px; background-color:#F9FAFB; 
+                            border-radius:8px; margin:12px 0;'>
+                    {snippet}
+                </div>
             """,
             unsafe_allow_html=True
         )
 
-        from streamlit.components.v1 import html
-        html(f"""
-            <div style='font-size:15px; line-height:1.5; 
-                        padding:10px; background-color:#F9FAFB; 
-                        border-radius:8px; margin:8px 0;'>
-                {snippet}
-            </div>
-        """, height=180)
-
-        # Download Button
+        # Download Button direkt im Rahmen
         if file_path and os.path.exists(file_path):
             mime = "application/pdf" if file_name.endswith(".pdf") else \
                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -112,3 +109,6 @@ def render_result_card(doc, idx, query, embedding_model=None, score=None):
                     mime=mime,
                     key=f"download-{idx}-{file_name}"
                 )
+
+        # Card-Ende (nur Style-Tag zum Schließen des Divs)
+        st.markdown("</div>", unsafe_allow_html=True)
