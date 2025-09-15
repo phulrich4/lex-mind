@@ -77,7 +77,7 @@ def render_result_card(doc, idx, query, embedding_model=None, score=None):
                 snippet
             )
 
-    # --- Alles in einem Card-Rahmen ---
+    # --- Card im Container bauen ---
     with st.container():
         st.markdown(
             f"""
@@ -97,7 +97,7 @@ def render_result_card(doc, idx, query, embedding_model=None, score=None):
             unsafe_allow_html=True
         )
 
-        # Download Button direkt im Rahmen
+        # Download Button jetzt im gleichen Rahmen
         if file_path and os.path.exists(file_path):
             mime = "application/pdf" if file_name.endswith(".pdf") else \
                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -110,5 +110,5 @@ def render_result_card(doc, idx, query, embedding_model=None, score=None):
                     key=f"download-{idx}-{file_name}"
                 )
 
-        # Card-Ende (nur Style-Tag zum Schließen des Divs)
+        # Div sauber schließen
         st.markdown("</div>", unsafe_allow_html=True)
