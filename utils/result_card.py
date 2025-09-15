@@ -61,6 +61,9 @@ def render_result_card(doc, idx, query, embedding_model=None, score=None):
     # Titel
     title = f"### {file_name}"
 
+    # Score vorbereiten
+    score_str = f"{score:.3f}" if score is not None else "–"
+
     # Snippet
     snippet = doc.page_content[:300] + ("…" if len(doc.page_content) > 300 else "")
     if embedding_model:
@@ -80,7 +83,7 @@ def render_result_card(doc, idx, query, embedding_model=None, score=None):
                 {title}
                 <p style="font-size:14px; color:#374151; margin-top:4px;">
                     Kategorie: <b>{category}</b> &nbsp; | &nbsp;
-                    Score: <b>{score:.3f if score else "–"}</b> &nbsp; | &nbsp;
+                    Score: <b>{score_str}</b> &nbsp; | &nbsp;
                     Typ: <b>{doc_type}</b>
                 </p>
             </div>
