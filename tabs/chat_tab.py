@@ -1,10 +1,10 @@
 # tabs/chat_tab.py
 import streamlit as st
-from utils.search_llm import run_llm_search
+# from utils.search_llm import run_llm_search
 
 def render():
     st.header("💬 Chat – GPT4All Mini Suche")
-
+"""
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
@@ -19,4 +19,4 @@ def render():
 
         st.session_state.chat_history.append({"role": "user", "content": user_input})
         st.session_state.chat_history.append({"role": "assistant", "content": answer})
-
+"""
