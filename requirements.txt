@@ -5,6 +5,9 @@ streamlit
 langchain>=0.1.0
 sentence-transformers
 
+# LLM
+gpt4all
+
 # Vector Search
 rank-bm25
 
