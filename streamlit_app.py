@@ -76,8 +76,8 @@ with tab_suche:
     else:
         st.warning("Keine Dokumente verfügbar. Bitte Dokumente in 'docs/' ablegen.")
 
-# with tab_chat:
-#    chat_tab.render()
+with tab_chat:
+    chat_tab.render()
 
 with tab_dokumente:
     documents_tab.render(st.session_state.docs)
