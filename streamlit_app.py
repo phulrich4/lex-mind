@@ -1,7 +1,7 @@
 # streamlit_app.py
 import streamlit as st
 import os
-from tabs import search_tab, documents_tab, admin_tab
+from tabs import search_tab, documents_tab, admin_tab, chat_tab
 from utils.document_loader import load_documents_from_folder
 from utils.search import InMemoryVectorStore, HybridRetriever
 from sentence_transformers import SentenceTransformer
@@ -68,13 +68,16 @@ if not st.session_state.retriever:
 st.title("LexMind - KI-Assistent für Juristen")
 st.write("Durchsuchen Sie juristische Vorlagen mit KI. Intelligent, schnell und präzise.")
 
-tab_suche, tab_dokumente, tab_admin = st.tabs(["Suche", "Dokumente", "Admin"])
+tab_suche, tab_chat, tab_dokumente, tab_admin = st.tabs(["Suche", "Chat", "Dokumente", "Admin"])
 
 with tab_suche:
     if st.session_state.retriever:
         search_tab.render(st.session_state.docs, st.session_state.retriever)
     else:
         st.warning("Keine Dokumente verfügbar. Bitte Dokumente in 'docs/' ablegen.")
+
+with tab_chat:
+    chat_tab.render()
 
 with tab_dokumente:
     documents_tab.render(st.session_state.docs)
