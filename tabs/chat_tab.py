@@ -56,7 +56,7 @@ def generate_hf_response(messages):
 # Chat Interface
 # -------------------------------
 def render():
-    st.subheader("💬 Chat mit LexMind (Mistral 7B über Hugging Face)")
+    st.subheader("💬 Chat mit LexMind")
 
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = []
