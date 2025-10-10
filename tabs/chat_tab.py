@@ -8,7 +8,8 @@ import time
 # -------------------------------
 def generate_hf_response(messages):
     HF_TOKEN = st.secrets["HUGGINGFACE_TOKEN"]
-    MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
+    # MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
+    MODEL = "HuggingFaceH4/zephyr-7b-beta"
 
     # Prompt aus bisherigen Nachrichten zusammenbauen
     dialogue = ""
