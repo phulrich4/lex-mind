@@ -1,66 +1,86 @@
 # tabs/chat_tab.py
 import streamlit as st
-import replicate
-import os
+import requests
+import time
 
-# Setze API Key (aus Streamlit Secrets, NICHT aus Repo!)
-os.environ["REPLICATE_API_TOKEN"] = st.secrets["REPLICATE_API_TOKEN"]
+# -------------------------------
+# Hugging Face API Call
+# -------------------------------
+def generate_hf_response(messages):
+    HF_TOKEN = st.secrets["HUGGINGFACE_TOKEN"]
+    MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
 
+    # Prompt aus bisherigen Nachrichten zusammenbauen
+    dialogue = ""
+    for m in messages:
+        dialogue += f"{m['role'].capitalize()}: {m['content']}\n"
+    dialogue += "Assistant:"
+
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    payload = {
+        "inputs": dialogue,
+        "parameters": {
+            "temperature": 0.7,
+            "max_new_tokens": 400,
+            "return_full_text": False
+        }
+    }
+
+    # Retry-Mechanismus (HF ist manchmal kurz ausgelastet)
+    for attempt in range(3):
+        response = requests.post(
+            f"https://api-inference.huggingface.co/models/{MODEL}",
+            headers=headers,
+            json=payload,
+            timeout=60,
+        )
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list) and len(data) > 0 and "generated_text" in data[0]:
+                return data[0]["generated_text"].strip()
+            else:
+                return str(data)
+        elif response.status_code == 503:
+            # Modell lädt noch (kommt häufig bei HF)
+            st.info("🚀 Modell wird geladen – bitte kurz warten...")
+            time.sleep(10)
+        else:
+            st.error(f"Fehler {response.status_code}: {response.text}")
+            break
+
+    return "⚠️ Das Modell ist aktuell nicht erreichbar. Bitte versuche es in ein paar Sekunden erneut."
+
+
+# -------------------------------
+# Chat Interface
+# -------------------------------
 def render():
-    st.header("💬 Chat mit Llama")
+    st.subheader("💬 Chat mit LexMind (Mistral 7B über Hugging Face)")
 
-    # Chat-Verlauf in Session halten
     if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = [
-            {"role": "assistant", "content": "Hallo 👋, wie kann ich dir helfen?"}
-        ]
+        st.session_state.chat_messages = []
 
-    # Verlauf anzeigen
+    # Chatverlauf anzeigen
     for msg in st.session_state.chat_messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Eingabefeld
-    if prompt := st.chat_input("Nachricht eingeben..."):
-        # Nutzer-Eingabe anzeigen
-        st.chat_message("user").markdown(prompt)
+    # Neue Nutzereingabe
+    if prompt := st.chat_input("Frage stellen oder mit der KI chatten..."):
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-        # Modell-Antwort holen
+        # Antwort generieren
         with st.chat_message("assistant"):
-            with st.spinner("Lade Antwort..."):
-                response = generate_llama_response(st.session_state.chat_messages)
-                st.markdown(response)
-        st.session_state.chat_messages.append({"role": "assistant", "content": response})
+            with st.spinner("Mistral denkt nach..."):
+                answer = generate_hf_response(st.session_state.chat_messages)
+                st.markdown(answer)
 
-    # Reset-Button für Verlauf
-    if st.button("🔄 Chat zurücksetzen"):
-        st.session_state.chat_messages = [
-            {"role": "assistant", "content": "Chat zurückgesetzt. Wie kann ich dir helfen?"}
-        ]
-        st.experimental_rerun()
+        # Antwort speichern
+        st.session_state.chat_messages.append({"role": "assistant", "content": answer})
 
-
-def generate_llama_response(history):
-    # Prompt aus bisherigen Nachrichten bauen
-    dialogue = ""
-    for msg in history:
-        if msg["role"] == "user":
-            dialogue += f"User: {msg['content']}\n"
-        else:
-            dialogue += f"Assistant: {msg['content']}\n"
-
-    prompt = dialogue + "Assistant:"
-
-    # Replicate Call
-    output = replicate.run(
-        "a16z-infra/llama13b-v2-chat:df7690f1994d94e96ad9d568eac121aecf50684a0b0963b25a41cc40061269e5",
-        input={
-            "prompt": prompt,
-            "temperature": 0.6,
-            "top_p": 0.9,
-            "max_length": 512,
-            "repetition_penalty": 1
-        }
-    )
-    return "".join(output)
+    # Verlauf löschen
+    if st.button("🔄 Chatverlauf löschen"):
+        st.session_state.chat_messages = []
+        st.rerun()
